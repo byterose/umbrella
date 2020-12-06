@@ -4,8 +4,9 @@ import App from "@/App.vue";
 import router from "@/router";
 import store from "@/store";
 import mixins from "@/mixins";
-import "@/styles.scss";
+import "@/store/auth";
 import "@/filters";
+import "@/styles.scss";
 import "animate.css";
 
 Vue.config.productionTip = false;

@@ -1,3 +1,5 @@
+import numeral from "numeral";
+
 export default {
   // data() { },
   // created: () => { },
@@ -5,8 +7,8 @@ export default {
     sendit: () => {
       console.log("sendit");
     },
-    numeral: () => {
-      console.log("numeral");
+    numeral: (format = "0.00a", ...texts) => {
+      return numeral(...texts).format(format);
     },
   },
 };

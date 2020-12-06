@@ -5,7 +5,7 @@ import Coverage from "@/views/Coverage.vue";
 import Claims from "@/views/Claims.vue";
 import Account from "@/views/Account.vue";
 import About from "@/views/About.vue";
-import Tests from "@/views/Tests.vue";
+import Alpha from "@/views/Alpha.vue";
 import NotFound from "@/views/NotFound.vue";
 
 Vue.use(VueRouter);
@@ -29,12 +29,7 @@ const routes: Array<RouteConfig> = [
   {
     path: "/alpha",
     name: "Alpha",
-    component: Tests,
-  },
-  {
-    path: "/test",
-    name: "Alpha",
-    component: Tests,
+    component: Alpha,
   },
   {
     path: "/account",
@@ -72,13 +67,13 @@ const router = new VueRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  console.log("load", to.name);
+  // console.log("load", to.name);
   // fix
   // progress.done();
   next();
 });
 router.afterEach((to, from) => {
-  console.log("load end", to.name);
+  // console.log("load end", to.name);
   // fix
   // progress.done();
 });

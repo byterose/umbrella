@@ -10,6 +10,7 @@
         </router-link>
         <div class="router-links">
           <router-link to="/">Home</router-link>
+          <router-link to="/alpha">Alpha</router-link>
           <router-link to="/coverage">Coverage</router-link>
           <router-link to="/claims">Claims</router-link>
           <!-- <router-link to="/account">Account</router-link> -->
@@ -20,7 +21,11 @@
         <div class="flex vert">
           <Swipe></Swipe>
           <Space />
-          <button id="wallet" @click="connect">Connect Wallet</button>
+          <button id="wallet" @click="auth" :class="{ connected: $auth.isAuthenticated }">
+            <span v-if="!$auth.isAuthenticated">Connect Wallet</span>
+            <span v-if="$auth.isAuthenticated">Connected</span>
+          </button>
+          <!-- <button id="wallet" @click="logout">Reset Instance</button> -->
         </div>
       </div>
     </Container>
@@ -94,28 +99,53 @@ header {
     box-shadow: 0px 2px 3px var(--back-wallet-hover);
   }
   &.connected {
+    background: #e3c0ff;
+  }
+}
+
+[data-theme="dark"] {
+  #wallet {
+    &.connected {
+      background: #271d2c;
+    }
   }
 }
 </style>
 
 <script>
-import { Umbrella } from "@/repo_umbrella_sdk";
+import store from "@/store";
+import { mapActions } from "vuex";
 
 export default {
   name: "Header",
+  data() {
+    return {
+      account: store.state.account,
+    };
+  },
   components: {},
   methods: {
-    // fix
-    send() {
-      this.sendit("sendit");
+    ...mapActions(["connect", "disconnect", "reset"]),
+    async auth() {
+      const connected = await store.getters.connected;
+      if (connected) {
+        console.log("open user mini popup");
+      } else {
+        await this.connect();
+      }
     },
-    connect() {
-      console.log("connect");
-      // store.dispatch("WalletLogin");
+    async logout() {
+      await this.disconnect();
+      await this.reset();
     },
+    // send() {
+    //   this.sendit("sendit");
+    // },
+    // async auth("walletconnect") {
+    // },
   },
   mounted() {
-    this.send();
+    // this.send();
   },
 };
 </script>
