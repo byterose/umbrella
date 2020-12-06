@@ -14,9 +14,9 @@
 
       <Space size="md" />
 
-      <Button @click="buyer">Buy Coverage</Button>
+      <Button @click.native="buyer">Buy Coverage</Button>
       <br />
-      <Button @click="provider">Provide Coverage</Button>
+      <Button @click.native="provider">Provide Coverage</Button>
     </Container>
   </div>
 </template>
@@ -33,9 +33,11 @@ export default {
   components: {},
   methods: {
     buyer() {
+      console.log("buyer");
       return;
     },
     provider() {
+      console.log("provider");
       return;
     },
   },

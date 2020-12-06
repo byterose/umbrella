@@ -62,16 +62,16 @@ export default {
   methods: {
     switchTheme(event) {
       if (event.target.checked) {
-        store.dispatch("SetTheme", "dark");
+        store.dispatch("updateTheme", { theme: "dark" });
       } else {
-        store.dispatch("SetTheme", "light");
+        store.dispatch("updateTheme", { theme: "light" });
       }
     },
   },
   mounted() {
-    if (localStorage.getItem("theme") === "dark") {
-      document.querySelector("#switch").checked = true;
-    }
+    // if (localStorage.getItem("theme") === "dark") {
+    //   document.querySelector("#switch").checked = true;
+    // }
   },
 };
 </script>

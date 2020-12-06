@@ -13,7 +13,6 @@
 </style>
 
 <script>
-import store from "./store";
 export default {
   name: "App",
   head: {
@@ -21,10 +20,6 @@ export default {
     titleTemplate: "%s - Umbrella",
   },
   methods: {},
-  mounted() {
-    if (localStorage.getItem("theme")) {
-      document.documentElement.setAttribute("data-theme", localStorage.getItem("theme"));
-    }
-  },
+  // mounted() {},
 };
 </script>

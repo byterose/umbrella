@@ -1,51 +1,213 @@
+import { sleep, checkConnection } from "./../utils/index";
 import Vue from "vue";
 import Vuex from "vuex";
-import state from "./state";
-// import { Lock } from '@snapshot-labs/lock';
-// import injected from '@snapshot-labs/lock/connectors/injected';
-// import walletconnect from '@snapshot-labs/lock/connectors/walletconnect';
-// import { getInstance } from '@snapshot-labs/lock/plugins/vue';
+import config from "@/config";
+import { getInstance } from "@snapshot-labs/lock/plugins/vue";
+import { Web3Provider } from "@ethersproject/providers";
+import { formatUnits } from "@ethersproject/units";
+import store from "@/store";
+import { stateSave, stateLoad, stateDestroy, getERC20Contract, getBalance } from "@/utils";
+import YAMContract from "@/utils/abi/yam.json";
 
 Vue.use(Vuex);
+
 let auth;
 
+const defaultState = () => {
+  return {
+    account: stateLoad("account") || null,
+    theme: stateLoad("theme") || "light",
+    provider: {},
+    connector: {},
+    web3: {
+      core: null,
+      isInjected: false,
+      web3Instance: null,
+      network: config.networks["1"],
+    },
+  };
+};
+
 export default new Vuex.Store({
-  state: state,
-  modules: {},
+  state: defaultState(),
   mutations: {
-    SetTheme(state, payload) {
-      state.theme = payload;
-      localStorage.setItem("theme", payload);
-      document.documentElement.setAttribute("data-theme", payload);
+    UPDATE(state, data) {
+      Object.keys(data).forEach(key => {
+        Vue.set(state, key, data[key]);
+      });
+      console.debug("UPDATE", state, data);
+    },
+    THEME(state, data) {
+      state.theme = data.theme;
+      console.debug("THEME", data.theme);
+    },
+    CONNECT() {
+      console.debug("CONNECT");
+    },
+    RECONNECT(state, data) {
+      state.account = data.account;
+      console.debug("RECONNECT", data.account);
+    },
+    DISCONNECT(state, data) {
+      Vue.prototype.$auth.logout();
+      state.account = null;
+      window.localStorage.removeItem("account");
+      console.debug("DISCONNECT");
+    },
+    RESET(state, data) {
+      stateDestroy();
+      Object.assign(state, defaultState());
+      console.debug("RESET", state);
+    },
+    ON_PROVIDER_LOAD(state, data) {
+      console.debug("ON_PROVIDER_LOAD");
+    },
+    ON_PROVIDER_SUCCESS(state, data) {
+      state.account = data.account;
+      console.debug("ON_PROVIDER_SUCCESS", data);
+    },
+    ON_PROVIDER_FAILURE(state, data) {
+      state.account = null;
+      console.debug("ON_PROVIDER_FAILURE", data);
+    },
+    ON_CHAIN_CHANGED(state, data) {
+      if (!config.networks[data.chainId]) {
+        config.networks[data.chainId] = {
+          ...config.networks["1"],
+          chainId: data.chainId,
+          name: "Unknown",
+          network: "unknown",
+        };
+      }
+      state.web3.network = config.networks[data.chainId];
+      console.debug("ON_CHAIN_CHANGED", data);
+    },
+    ON_ACCOUNT_CHANGED(state, data) {
+      state.account = data.account;
+      console.debug("ON_ACCOUNT_CHANGED", data);
     },
   },
   actions: {
-    SetTheme(state, payload) {
-      state.commit("SetTheme", payload);
+    init: async ({ commit, dispatch }) => {
+      console.debug("init");
+      if (store.state.theme) {
+        document.documentElement.setAttribute("data-theme", store.state.theme);
+        setTimeout(() => {
+          if (store.state.theme === "dark") {
+            const switcher = document.querySelector("#switch") as HTMLInputElement;
+            if (switcher) switcher.checked = true;
+          }
+        }, 500);
+      }
+      setTimeout(async () => {
+        const connector = await Vue.prototype.$auth.getConnector();
+        if (connector) {
+          await dispatch("connect", connector);
+        }
+      }, 100);
+
+      // await dispatch('getMetapools');
+      commit("UPDATE", { init: true });
     },
-    // WalletLogin: async (state, payload) => {
-    //   const lock = new Lock();
-    //   lock.addConnector({
-    //     key: 'injected',
-    //     connector: injected
-    //   });
-    //   const connector = lock.getConnector('injected');
-    //   const provider = await connector.connect('injected');
-    //   state.connector = connector;
-    //   state.provider = provider;
+    updateTheme(state, data) {
+      const value = data.theme;
+      stateSave("theme", value);
+      document.documentElement.setAttribute("data-theme", value);
+      state.commit("THEME", { theme: value });
+    },
+
+    // wallet
+    connect: async ({ dispatch }, connector = "injected") => {
+      auth = getInstance();
+      await auth.login(connector);
+      if (auth.provider) {
+        stateSave("provider", connector);
+        auth.web3 = new Web3Provider(auth.provider);
+        Vue.prototype.$web3 = auth.web3;
+        Vue.prototype.$provider = auth.web3.provider;
+        await dispatch("loadProvider");
+        console.log("Vue.prototype.$web3", Vue.prototype.$web3);
+      }
+    },
+    disconnect: async ({ commit }) => {
+      commit("DISCONNECT");
+    },
+    reset: async ({ commit }) => {
+      commit("RESET");
+    },
+    loadProvider: async ({ commit, dispatch }) => {
+      commit("ON_PROVIDER_LOAD");
+      try {
+        if (auth.provider.removeAllListeners) auth.provider.removeAllListeners();
+        if (auth.provider.on) {
+          auth.provider.on("chainChanged", async chainId => {
+            commit("ON_CHAIN_CHANGED", { chainId: parseInt(formatUnits(chainId, 0)) });
+            // await dispatch('getYamBalance');
+          });
+          auth.provider.on("accountsChanged", async accounts => {
+            if (accounts.length !== 0) {
+              const account = accounts.length > 0 ? accounts[0] : null;
+              commit("ON_ACCOUNT_CHANGED", { account });
+              stateSave("account", account);
+              await dispatch("loadProvider");
+            }
+          });
+          // auth.provider.on('disconnect', async () => {
+          //   commit('CLOSE_MODAL');
+          // });
+        }
+        const [network, accounts] = await Promise.all([auth.web3.getNetwork(), auth.web3.listAccounts()]);
+        commit("ON_CHAIN_CHANGED", { chainId: network.chainId });
+        const account = accounts.length > 0 ? accounts[0] : null;
+        commit("ON_PROVIDER_SUCCESS", { account });
+        stateSave("account", account);
+      } catch (e) {
+        commit("ON_PROVIDER_FAILURE", { e });
+        return Promise.reject();
+      }
+    },
+
+    // contracts
+    getYamBalance: async ({ commit, dispatch }) => {
+      // checkConnection({ commit, dispatch });
+      await sleep(500);
+      if (!Vue.prototype.$web3) {
+        await dispatch("connect");
+      }
+      console.log("Vue.prototype.$web3", Vue.prototype.$web3);
+      const yamv3 = "0x0AaCfbeC6a24756c20D41914F2caba817C0d8521";
+      // const contract = new web3.Contract(YAMContract, yamv3);
+      const balance = await getBalance(Vue.prototype.$provider, yamv3, store.state.account);
+      return balance;
+    },
+    // getMetapools: async ({ commit }) => {
+    //   let metapools;
+    //   commit('UPDATE', { metapools });
+    //   return metapools;
     // },
-    // WalletLogout: async (state, payload) => {
-    //   Vue.prototype.$auth.logout();
-    //   const connector = state.connector;
-    //   connector.logout();
+    // getMetapoolContract: async ({ commit }, { metapoolId }) => {
+    //   let contract;
+    //   commit('UPDATE', { selectedContract });
+    //   return contract;
     // },
   },
   getters: {
     theme(state) {
       return state.theme;
     },
-    connector(state) {
-      return state.connector;
+    account(state) {
+      return state.account;
+    },
+    async connected(state) {
+      const isAuthenticated = await Vue.prototype.$auth.isAuthenticated;
+      return state.account && state.account !== null && isAuthenticated;
+    },
+    async connector() {
+      const auth = await Vue.prototype.$auth;
+      const connector = await auth.getConnector();
+      return connector; // move to state
     },
   },
 });
+
+store.dispatch("init");
