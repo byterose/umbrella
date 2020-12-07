@@ -15,8 +15,9 @@ let auth;
 
 const defaultState = () => {
   return {
-    account: stateLoad("account") || null,
+    account: stateLoad("account") || "0x0",
     theme: stateLoad("theme") || "light",
+    version: 1, // make dynamic
     provider: {},
     connector: {},
     web3: {
@@ -99,12 +100,12 @@ export default new Vuex.Store({
           }
         }, 500);
       }
-      setTimeout(async () => {
-        const connector = await Vue.prototype.$auth.getConnector();
-        if (connector) {
-          await dispatch("connect", connector);
-        }
-      }, 100);
+      // setTimeout(async () => {
+      //   const connector = await Vue.prototype.$auth.getConnector();
+      //   if (connector) {
+      //     await dispatch("connect", connector);
+      //   }
+      // }, 100);
 
       // await dispatch('getMetapools');
       commit("UPDATE", { init: true });

@@ -1,9 +1,12 @@
 <template>
   <div class="tests">
     <Container :size="800">
-      <p>Wallet: {{ this.connector }}</p>
-      <p>Connected: {{ $auth.isAuthenticated }}</p>
+      <p>Version: {{ $store.state.version }}</p>
+      <p>Theme: {{ $store.state.theme }}</p>
       --
+      <p>Wallet: {{ this.connector }}</p>
+      <p>Account: {{ $store.state.account }}</p>
+      <p>Connected: {{ $auth.isAuthenticated }}</p>
       <p>
         Balance: <b>{{ numeral("0.00a", yamBalance) }} YAM</b>
       </p>
