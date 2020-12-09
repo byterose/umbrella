@@ -10,8 +10,8 @@ import "@/styles.scss";
 import "animate.css";
 
 Vue.config.productionTip = false;
-Vue.use(VueMeta, { keyName: "head" });
 Vue.mixin(mixins);
+Vue.use(VueMeta, { keyName: "head" });
 
 Vue.component("Header", () => import("@/components/Header.vue"));
 Vue.component("Card", () => import("@/components/Card.vue"));
