@@ -11,8 +11,8 @@
         <div class="router-links">
           <router-link to="/">Home</router-link>
           <router-link to="/alpha">Alpha</router-link>
-          <router-link to="/coverage">Coverage</router-link>
-          <router-link to="/claims">Claims</router-link>
+          <!-- <router-link to="/coverage">Coverage</router-link> -->
+          <!-- <router-link to="/claims">Claims</router-link> -->
           <!-- <router-link to="/account">Account</router-link> -->
           <!-- <router-link to="/about">About</router-link> -->
           <!-- <router-link to="/docs">Docs</router-link> -->

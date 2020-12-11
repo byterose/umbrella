@@ -9,7 +9,7 @@
   background: #fff;
   width: 100%;
   box-shadow: 0px 4px 8px #3b2e4317;
-  padding: 15px 20px;
+  padding: 20px 20px;
   border-radius: 5px;
 }
 

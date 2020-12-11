@@ -1,44 +1,40 @@
 <template>
   <div class="tests">
     <Container :size="800">
-      <p>Version: {{ $store.state.version }}</p>
-      <p>Theme: {{ $store.state.theme }}</p>
-      --
-      <p>Wallet: {{ this.connector }}</p>
-      <p>Account: {{ $store.state.account }}</p>
-      <p>Connected: {{ $auth.isAuthenticated }}</p>
-      <p>
-        Balance: <b>{{ numeral("0.00a", yamBalance) }} YAM</b>
-      </p>
+      <Card>
+        <h1 class="">Umbrella Alpha</h1>
+      </Card>
+
       <Space size="md" />
+
       <Card>
         <h2>Buy Coverage</h2>
-        <div>
+        <div class="spacing">
           <label>Coverage Amount: </label>
           <input v-model="coverage" />
         </div>
-        <div>
+        <div class="spacing">
           <label>Duration: </label>
           <input v-model="duration" />
         </div>
-        <div>
+        <div class="spacing">
           <span>Price: {{ this.price }}</span>
         </div>
         <!-- Need to check approval on payToken for metapool -->
-        <Button v-if="!$store.state.approvals.payToken" @click.native="payTokenApprove">Approve to Buy Coverage</Button>
-        <Button v-if="$store.state.approvals.payToken" @click.native="buyCoverage">Buy Coverage</Button>
+        <Button class="right" v-if="!$store.state.approvals.payToken" @click.native="payTokenApprove">Approve to Buy Coverage</Button>
+        <Button class="right" v-if="$store.state.approvals.payToken" @click.native="buyCoverage">Buy Coverage</Button>
       </Card>
       <Space size="md" />
       <Card>
         <h2>Provide Coverage</h2>
-        <div>
+        <div class="spacing">
           <label>Coverage Amount: </label>
           <input v-model="provideCoverage" />
         </div>
         <p>Liquidity is locked for at least 1 week</p>
         <!-- Need to check approval on payToken for metapool -->
-        <Button v-if="!$store.state.approvals.payToken" @click.native="payTokenApprove">Approve to Provide Coverage</Button>
-        <Button v-if="$store.state.approvals.payToken" @click.native="provideCoverageMake">Provide Coverage</Button>
+        <Button class="right" v-if="!$store.state.approvals.payToken" @click.native="payTokenApprove">Approve to Provide Coverage</Button>
+        <Button class="right" v-if="$store.state.approvals.payToken" @click.native="provideCoverageMake">Provide Coverage</Button>
       </Card>
       <Space size="md" />
 
@@ -46,27 +42,70 @@
       <!-- moved canWithdraw on button, check will happen and the button will only show if the user is able to withdraw, check l.156 -->
       <Card>
         <h2>Withdraw Coverage</h2>
-        <div>
+        <div class="spacing">
           <label>Withdraw Amount: </label>
           <input v-model="withdrawCoverage" />
         </div>
         <p>Withdraws are timelocked for 1 week to allow arbiters to act in case of a hack.</p>
         <p>You must initiate a withdraw and wait the necessary time</p>
-        <Button @click.native="withdrawInitiate">Initiate Withdraw</Button>
-        <Button v-if="canWithdraw" @click.native="withdraw">Withdraw</Button>
+        <Button class="right" @click.native="withdrawInitiate">Initiate Withdraw</Button>
+        <Button class="right" v-if="canWithdraw" @click.native="withdraw">Withdraw</Button>
       </Card>
 
-      <br />
-      <br />
+      <Space size="md" />
+      <p>Version: {{ $store.state.version }}</p>
+      <p>Theme: {{ $store.state.theme }}</p>
+      <p>Wallet: {{ this.connector }}</p>
+      <p>Connected: {{ $auth.isAuthenticated }}</p>
+      <p>
+        Account: <b>{{ $store.state.account ? $store.state.account : "0x0" }}</b>
+      </p>
+      <p>
+        Balance: <b>{{ numeral("0.00a", yamBalance) }} YAM</b>
+      </p>
       <Space size="md" />
       <Button v-if="$auth.isAuthenticated" @click.native="logout">Disconnect Wallet</Button>
-      <br />
       <Button @click.native="resetInstance">Reset Instance</Button>
     </Container>
   </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+h2 {
+  margin-bottom: 10px;
+}
+
+input {
+  border-radius: 4px;
+  border: 1px solid;
+  padding: 5px 10px;
+  font-weight: bold;
+  font-size: 20px;
+  width: calc(100% - 25%);
+  color: #9655b6;
+
+  &:focus {
+    color: #000;
+  }
+}
+
+button.right {
+  float: right;
+}
+label {
+  display: inline-block;
+  font-weight: bold;
+  color: #e7b6ff;
+  width: 25%;
+}
+
+button {
+  margin-top: 10px;
+}
+.spacing {
+  margin: 10px 0px;
+}
+</style>
 
 <script>
 import store from "@/store";

@@ -20,7 +20,7 @@ let auth;
 
 const defaultState = () => {
   return {
-    version: 1, // make dynamic
+    version: "A-0.1", // make dynamic
     theme: stateLoad("theme") || "light",
     account: stateLoad("account") || "0x0",
     userType: "default", // seeker, provider, arbitrer

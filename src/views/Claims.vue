@@ -1,7 +1,13 @@
 <template>
   <div class="claims">
     <Container :size="800">
-      <b class="gray">Claims</b>
+      <Card>
+        <h1 class="">Claims</h1>
+      </Card>
+
+      <Space size="md" />
+
+      <!-- <b class="gray">Claim list</b> -->
     </Container>
   </div>
 </template>

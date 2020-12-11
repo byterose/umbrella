@@ -7,16 +7,15 @@
     </Container>
     -->
 
-    <Container :size="1000">
+    <Container :size="800">
       <Card>
-        <h1 class="accent">Umbrella Coverage</h1>
+        <h1 class="">Umbrella Coverage</h1>
       </Card>
 
       <Space size="md" />
 
-      <Button @click.native="buyer">Buy Coverage</Button>
-      <br />
-      <Button @click.native="provider">Provide Coverage</Button>
+      <!-- <Button @click.native="buyer">Buy Coverage</Button> -->
+      <!-- <Button @click.native="provider">Provide Coverage</Button> -->
     </Container>
   </div>
 </template>

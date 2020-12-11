@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Fira+Sans:wght@200;300;400;500;600;700;800&display=swap");
 @import "./colors.scss";
+@import "./resets.scss";
 
 html,
 body {
@@ -12,6 +13,10 @@ body {
   text-rendering: optimizeSpeed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  padding-bottom: 90px;
 }
 
 a {
@@ -29,52 +34,6 @@ a {
     // color: var(--text) !important;
     text-decoration: none !important;
   }
-}
-
-b {
-  font-weight: 500;
-}
-
-*,
-*::before,
-*::after {
-  outline: none !important;
-  box-sizing: border-box;
-}
-
-body,
-h1,
-h2,
-h3,
-h4,
-p,
-li,
-figure,
-figcaption,
-blockquote,
-ul[class],
-ol[class],
-dl,
-dd {
-  padding: 0;
-  margin: 0;
-}
-
-ul[class],
-ol[class] {
-  list-style: none;
-}
-
-img {
-  max-width: 100%;
-  display: block;
-}
-
-input,
-button,
-textarea,
-select {
-  font: inherit;
 }
 
 .primary {
