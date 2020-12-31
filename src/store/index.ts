@@ -308,14 +308,14 @@ export default new Vuex.Store({
         return {} as any;
       }
     },
-    getProtectionIds: async ({ commit, dispatch }, payload: { metaPoolAddr: string; addr: string }): Promise<Protection> => {
+    getProtectionIds: async ({ commit, dispatch }, payload: { metaPoolAddr: string; addr: string }): Promise<any> => {
       // const metaContract = getMetaPool(provider, metaPoolAddr);
       const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
       try {
         const pids: number[] = await metapoolContract.methods.getPids(payload.addr).call();
         return pids;
       } catch (e) {
-        console.error("Couldn't get protection: ", payload.pid);
+        console.error("Couldn't get protection: ", e);
         return {} as any;
       }
     },
