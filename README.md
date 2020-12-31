@@ -4,7 +4,7 @@
 
 ## Available at
 
-https://umbdev.yam.finance/ - Live website
+https://ycp.yam.finance/ - Live website
 <a href="https://app.netlify.com/sites/yamycp/deploys" target="_blank">![Netlify Status](https://api.netlify.com/api/v1/badges/c97b040e-0743-4062-acb7-93fc1daee345/deploy-status)</a>
 
 <!--
