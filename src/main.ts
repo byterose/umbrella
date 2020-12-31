@@ -12,6 +12,7 @@ import "@/store/auth";
 import "@/filters";
 import "@/styles.scss";
 import "animate.css";
+import "@invisiburu/vue-picker/dist/vue-picker.min.css";
 
 Vue.config.productionTip = false;
 Vue.mixin(mixins);
