@@ -175,7 +175,7 @@
             delay: { show: 150, hide: 100 },
             placement: 'left-center',
           }"
-          >Reserves: <b>{{ poolInfo.reserves ? poolInfo.reserves.div(ethDecs).toFixed(4) : "0" }}</b></label
+          >Reserves: <b>{{ poolInfo.reserves ? poolInfo.reserves.div(10 ** 18).toFixed(4) : "0" }}</b></label
         >
         <label
           v-tooltip="{
@@ -183,7 +183,7 @@
             delay: { show: 150, hide: 100 },
             placement: 'left-center',
           }"
-          >Utilized: <b>{{ poolInfo.utilized ? poolInfo.utilized.div(ethDecs).toFixed(4) : "0" }}</b></label
+          >Utilized: <b>{{ poolInfo.utilized ? poolInfo.utilized.div(10 ** 18).toFixed(4) : "0" }}</b></label
         >
       </div>
     </Container>
