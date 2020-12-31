@@ -13,34 +13,34 @@ Vue.use(VueRouter);
 const routes: Array<RouteConfig> = [
   {
     path: "/",
-    name: "Home",
-    component: Home,
+    name: "Alpha",
+    component: Alpha,
   },
-  {
-    path: "/coverage",
-    name: "Coverage",
-    component: Coverage,
-  },
-  {
-    path: "/claims",
-    name: "Claims",
-    component: Claims,
-  },
+  // {
+  //   path: "/coverage",
+  //   name: "Coverage",
+  //   component: Coverage,
+  // },
+  // {
+  //   path: "/claims",
+  //   name: "Claims",
+  //   component: Claims,
+  // },
   {
     path: "/alpha",
     name: "Alpha",
     component: Alpha,
   },
-  {
-    path: "/account",
-    name: "Account",
-    component: Account,
-  },
-  {
-    path: "/about",
-    name: "About",
-    component: About,
-  },
+  // {
+  //   path: "/account",
+  //   name: "Account",
+  //   component: Account,
+  // },
+  // {
+  //   path: "/about",
+  //   name: "About",
+  //   component: About,
+  // },
   {
     path: "/404",
     name: "404",

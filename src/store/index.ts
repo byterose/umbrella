@@ -6,13 +6,14 @@ import { getInstance } from "@snapshot-labs/lock/plugins/vue";
 import { Web3Provider } from "@ethersproject/providers";
 import { formatUnits } from "@ethersproject/units";
 import { stateSave, stateLoad, stateDestroy, getERC20Contract, getBalance, waitTransaction, approve } from "@/utils";
-import { sleep, checkConnection } from "./../utils/index";
+import { sleep, checkConnection, getAllowance } from "./../utils/index";
 import { AbiItem } from "web3-utils";
 import { provider } from "web3-core";
 import config from "@/config";
 import store from "@/store";
 import YAMContract from "@/utils/abi/yam.json";
 import MetaPool from "@/utils/abi/UmbrellaMetaPool.json";
+import BigNumber from "bignumber.js";
 
 Vue.use(Vuex);
 
@@ -31,9 +32,7 @@ const defaultState = () => {
       contractId: 0, // or
       price: 0,
     }, // populated with user choosing
-    approvals: {
-      payToken: false,
-    },
+    approvals: {},
     canWithdraw: false,
 
     theNewKey: null,
@@ -109,6 +108,12 @@ export default new Vuex.Store({
     ON_ACCOUNT_CHANGED(state, data) {
       state.account = data.account;
       console.debug("ON_ACCOUNT_CHANGED", data);
+    },
+    UPDATE_APPROVAL(state, data) {
+      // state.contracts[data.address].approved = data.value;
+      // Vue.set(state, 'approvals.' + data.identifier, data.value);
+      state.approvals[data.identifier] = data.value;
+      console.debug("UPDATE_APPROVAL", data);
     },
 
     // to sort all once finished (-camelcase reminder)
@@ -219,31 +224,55 @@ export default new Vuex.Store({
     // ========== MetaPool stuff ========
     // updateApprovals: ({ commit, dispatch }, payload: { userAddress: string, spenderAddress: string, tokenAddress: string }) => {
     updateApprovals: async ({ commit, dispatch }, payload: { spenderAddress: string; tokenAddress: string }) => {
-      // to test on contract
-      // const result = await approve(store.state.account, payload.spenderAddress, payload.tokenAddress, Vue.prototype.$provider);
-      // commit("UPDATE", { approvals: { payToken: result } });
-
-      // mock data to remove
-      setTimeout(() => {
-        const result = true;
+      try {
+        const result = await approve(store.state.account, payload.spenderAddress, payload.tokenAddress, Vue.prototype.$provider);
         commit("UPDATE", { approvals: { payToken: result } });
-      }, 2500);
+      } catch (e) {
+        commit("UPDATE", { approvals: { payToken: true } });
+        console.log("bad approval");
+      }
     },
+
     getMetaPool: ({ commit, dispatch }, payload: { address: string }) => {
       const web3 = new Web3(Vue.prototype.$provider);
       const metapoolContract = new web3.eth.Contract((MetaPool.abi as unknown) as AbiItem, payload.address);
       commit("GET_METAPOOL", { currentMetapool: metapoolContract });
       return metapoolContract;
     },
-    // prep for very later
-    // getMetaPools: ({ commit, dispatch }, payload: { addresses: string[] }) => {
-    //   const web3 = new Web3(Vue.prototype.$provider);
-    //   foreach...
-    //   const metapoolContract = new web3.eth.Contract((MetaPool.abi as unknown) as AbiItem, payload.addresses);
-    //   commit("GET_METAPOOL", { currentMetapool: metapoolContract });
-    //   return metapoolContract;
-    // },
-    getCoveredConcepts: async ({ commit, dispatch }, payload: { provider: provider; metaPoolAddr: string }): Promise<string[]> => {
+
+    checkContractApprovals: async ({ commit, dispatch }) => {
+      return store.state.approvals;
+    },
+
+    fetchContractApproval: async ({ commit, dispatch }, payload: { identifier: string; spenderAddress: string; tokenAddress: string }) => {
+      await sleep(500);
+      if (!Vue.prototype.$web3) {
+        await dispatch("connect");
+      }
+      const result = await getAllowance(store.state.account, payload.spenderAddress, payload.tokenAddress, Vue.prototype.$provider);
+      console.debug("allowance", payload.spenderAddress, payload.tokenAddress, result);
+      if (Number(result) > 0) {
+        commit("UPDATE_APPROVAL", { identifier: payload.identifier, value: true });
+      } else {
+        commit("UPDATE_APPROVAL", { identifier: payload.identifier, value: false });
+      }
+      return result;
+    },
+    getContractApproval: async ({ commit, dispatch }, payload: { identifier: string; spenderAddress: string; tokenAddress: string }) => {
+      await sleep(500);
+      if (!Vue.prototype.$web3) {
+        await dispatch("connect");
+      }
+      if (!store.state.approvals[payload.spenderAddress]) {
+        await approve(store.state.account, payload.spenderAddress, payload.tokenAddress, Vue.prototype.$provider);
+        await dispatch("fetchContractApproval", payload);
+        return -1;
+      } else {
+        commit("UPDATE_APPROVAL", { identifier: payload.identifier, value: true });
+        return 1;
+      }
+    },
+    getCoveredConcepts: async ({ commit, dispatch }, payload: { metaPoolAddr: string }): Promise<string[]> => {
       // const web3 = new Web3(Vue.prototype.$provider);
       // const metapoolContract = getMetaPool(provider, metaPoolAddr);
       const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
@@ -258,7 +287,7 @@ export default new Vuex.Store({
         return [];
       }
     },
-    getConceptIndex: async ({ commit, dispatch }, payload: { provider: provider; metaPoolAddr: string; concept: string }): Promise<number> => {
+    getConceptIndex: async ({ commit, dispatch }, payload: { metaPoolAddr: string; concept: string }): Promise<number> => {
       // const metaContract = getMetaPool(provider, metaPoolAddr);
       const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
       try {
@@ -268,20 +297,7 @@ export default new Vuex.Store({
         return -1;
       }
     },
-    getConceptEnterable: async (
-      { commit, dispatch },
-      payload: { provider: provider; metaPoolAddr: string; conceptIndex: number }
-    ): Promise<boolean> => {
-      // const metaContract = getMetaPool(provider, metaPoolAddr);
-      const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
-      try {
-        const enterable: boolean = await metapoolContract.methods.conceptEnterable(payload.conceptIndex).call();
-        return enterable;
-      } catch (e) {
-        return false;
-      }
-    },
-    getProtectionInfo: async ({ commit, dispatch }, payload: { provider: provider; metaPoolAddr: string; pid: number }): Promise<Protection> => {
+    getPositionData: async ({ commit, dispatch }, payload: { metaPoolAddr: string; pid: number }): Promise<Protection> => {
       // const metaContract = getMetaPool(provider, metaPoolAddr);
       const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
       try {
@@ -292,7 +308,18 @@ export default new Vuex.Store({
         return {} as any;
       }
     },
-    getProviderTPS: async ({ commit, dispatch }, payload: { provider: provider; metaPoolAddr: string; pp: string }): Promise<string> => {
+    getProtectionIds: async ({ commit, dispatch }, payload: { metaPoolAddr: string; addr: string }): Promise<Protection> => {
+      // const metaContract = getMetaPool(provider, metaPoolAddr);
+      const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
+      try {
+        const pids: number[] = await metapoolContract.methods.getPids(payload.addr).call();
+        return pids;
+      } catch (e) {
+        console.error("Couldn't get protection: ", payload.pid);
+        return {} as any;
+      }
+    },
+    getProviderTPS: async ({ commit, dispatch }, payload: { metaPoolAddr: string; pp: string }): Promise<string> => {
       // const metaContract = getMetaPool(provider, metaPoolAddr);
       const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
       try {
@@ -303,7 +330,7 @@ export default new Vuex.Store({
         return {} as any;
       }
     },
-    getGlobalTPS: async ({ commit, dispatch }, payload: { provider: provider; metaPoolAddr: string }): Promise<string> => {
+    getGlobalTPS: async ({ commit, dispatch }, payload: { metaPoolAddr: string }): Promise<string> => {
       // const metaContract = getMetaPool(provider, metaPoolAddr);
       const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
       try {
@@ -317,15 +344,12 @@ export default new Vuex.Store({
     buyProtection: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
-        userAddress: string;
         conceptIndex: number;
         coverageAmount: string;
         duration: number;
         maxPay: string;
         deadline: number;
-        // metapoolContract: any,
         onTxHash?: (txHash: string) => void;
       }
     ): Promise<boolean> => {
@@ -333,9 +357,21 @@ export default new Vuex.Store({
         // const metaContract = getMetaPool(provider, metaPoolAddr);
         const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
         const web3Provider = Vue.prototype.$provider;
+        const ge = await metapoolContract.methods
+          .buyProtection(payload.conceptIndex, payload.coverageAmount, payload.duration, payload.maxPay, payload.deadline)
+          .estimateGas(
+            {
+              from: store.state.account,
+              gas: 50000000,
+            },
+            async (error: any) => {
+              console.log("SimTx Failed, ", error);
+              return false;
+            }
+          );
         return metapoolContract.methods
           .buyProtection(payload.conceptIndex, payload.coverageAmount, payload.duration, payload.maxPay, payload.deadline)
-          .send({ from: payload.userAddress, gas: 280000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: ge }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not buy protection", error);
               payload.onTxHash && payload.onTxHash("");
@@ -359,9 +395,7 @@ export default new Vuex.Store({
     claim: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
-        userAddress: string;
         pid: string;
         onTxHash?: (txHash: string) => void;
       }
@@ -370,7 +404,17 @@ export default new Vuex.Store({
         // const metaContract = getMetaPool(provider, metaPoolAddr);
         const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
         const web3Provider = Vue.prototype.$provider;
-        return metapoolContract.methods.claim(payload.pid).send({ from: payload.userAddress, gas: 280000 }, async (error: any, txHash: string) => {
+        const ge = await metapoolContract.methods.claim(payload.pid).estimateGas(
+          {
+            from: store.state.account,
+            gas: 50000000,
+          },
+          async (error: any) => {
+            console.log("SimTx Failed, ", error);
+            return false;
+          }
+        );
+        return metapoolContract.methods.claim(payload.pid).send({ from: store.state.account, gas: ge }, async (error: any, txHash: string) => {
           if (error) {
             console.error("MetaPool could not claim", error);
             payload.onTxHash && payload.onTxHash("");
@@ -394,7 +438,6 @@ export default new Vuex.Store({
     transferProtection: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         toAddress: string;
@@ -407,7 +450,7 @@ export default new Vuex.Store({
         const web3Provider = Vue.prototype.$provider;
         return metapoolContract.methods
           .transfer(payload.toAddress)
-          .send({ from: payload.userAddress, gas: 280000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: 280000 }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not transfer protection", error);
               payload.onTxHash && payload.onTxHash("");
@@ -431,7 +474,6 @@ export default new Vuex.Store({
     metaSetApprovalAl: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         operatorAddr: string;
@@ -445,7 +487,7 @@ export default new Vuex.Store({
         const web3Provider = Vue.prototype.$provider;
         return metapoolContract.methods
           .setApprovalForAll(payload.operatorAddr, payload.approved)
-          .send({ from: payload.userAddress, gas: 280000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: 280000 }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not transfer protection", error);
               payload.onTxHash && payload.onTxHash("");
@@ -469,7 +511,6 @@ export default new Vuex.Store({
     metaSafeTransferFrom: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         fromAddr: string;
@@ -485,7 +526,7 @@ export default new Vuex.Store({
         const web3Provider = Vue.prototype.$provider;
         return metapoolContract.methods
           .safeTransferFrom(payload.fromAddr, payload.toAddr, payload.pid, payload.data)
-          .send({ from: payload.userAddress, gas: 280000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: 280000 }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not transfer protection", error);
               payload.onTxHash && payload.onTxHash("");
@@ -509,9 +550,7 @@ export default new Vuex.Store({
     provideCoverage: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
-        userAddress: string;
         amount: string;
         onTxHash?: (txHash: string) => void;
       }
@@ -520,9 +559,19 @@ export default new Vuex.Store({
         // const metaContract = getMetaPool(provider, metaPoolAddr);
         const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
         const web3Provider = Vue.prototype.$provider;
+        const ge = await metapoolContract.methods.provideCoverage(payload.amount).estimateGas(
+          {
+            from: store.state.account,
+            gas: 50000000,
+          },
+          async (error: any) => {
+            console.log("SimTx Failed, ", error);
+            return false;
+          }
+        );
         return metapoolContract.methods
           .provideCoverage(payload.amount)
-          .send({ from: payload.userAddress, gas: 480000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: ge }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not provide coverage", error);
               payload.onTxHash && payload.onTxHash("");
@@ -546,9 +595,7 @@ export default new Vuex.Store({
     initiateWithdraw: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
-        userAddress: string;
         onTxHash?: (txHash: string) => void;
       }
     ): Promise<boolean> => {
@@ -556,7 +603,7 @@ export default new Vuex.Store({
         // const metaContract = getMetaPool(provider, metaPoolAddr);
         const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
         const web3Provider = Vue.prototype.$provider;
-        return metapoolContract.methods.initiateWithdraw().send({ from: payload.userAddress, gas: 80000 }, async (error: any, txHash: string) => {
+        return metapoolContract.methods.initiateWithdraw().send({ from: store.state.account, gas: 80000 }, async (error: any, txHash: string) => {
           if (error) {
             console.error("MetaPool could not initiate withdraw", error);
             payload.onTxHash && payload.onTxHash("");
@@ -577,10 +624,17 @@ export default new Vuex.Store({
         return false;
       }
     },
+    getUserPayTokenBalance: async ({ commit, dispatch }, paytoken: string) => {
+      await sleep(500);
+      if (!Vue.prototype.$web3) {
+        await dispatch("connect");
+      }
+      const balance = await getBalance(Vue.prototype.$provider, paytoken, store.state.account);
+      return balance;
+    },
     withdraw: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         amount: string;
@@ -593,7 +647,7 @@ export default new Vuex.Store({
         const web3Provider = Vue.prototype.$provider;
         return metapoolContract.methods
           .withdraw(payload.amount)
-          .send({ from: payload.userAddress, gas: 480000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: 480000 }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not withdraw", error);
               payload.onTxHash && payload.onTxHash("");
@@ -617,7 +671,6 @@ export default new Vuex.Store({
     claimPremiums: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         onTxHash?: (txHash: string) => void;
@@ -627,7 +680,7 @@ export default new Vuex.Store({
         // const metaContract = getMetaPool(provider, metaPoolAddr);
         const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
         const web3Provider = Vue.prototype.$provider;
-        return metapoolContract.methods.claimPremiums().send({ from: payload.userAddress, gas: 480000 }, async (error: any, txHash: string) => {
+        return metapoolContract.methods.claimPremiums().send({ from: store.state.account, gas: 480000 }, async (error: any, txHash: string) => {
           if (error) {
             console.error("MetaPool could not withdraw", error);
             payload.onTxHash && payload.onTxHash("");
@@ -651,7 +704,6 @@ export default new Vuex.Store({
     sweepPremiums: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         pids: string[];
@@ -664,7 +716,7 @@ export default new Vuex.Store({
         const web3Provider = Vue.prototype.$provider;
         return metapoolContract.methods
           .sweepPremiums(payload.pids)
-          .send({ from: payload.userAddress, gas: 1480000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: 1480000 }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not sweep premiums", error);
               payload.onTxHash && payload.onTxHash("");
@@ -688,7 +740,6 @@ export default new Vuex.Store({
     sweep: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         pid: string;
@@ -699,7 +750,7 @@ export default new Vuex.Store({
         // const metaContract = getMetaPool(provider, metaPoolAddr);
         const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
         const web3Provider = Vue.prototype.$provider;
-        return metapoolContract.methods.sweep(payload.pid).send({ from: payload.userAddress, gas: 380000 }, async (error: any, txHash: string) => {
+        return metapoolContract.methods.sweep(payload.pid).send({ from: store.state.account, gas: 380000 }, async (error: any, txHash: string) => {
           if (error) {
             console.error("MetaPool could not sweep premium", error);
             payload.onTxHash && payload.onTxHash("");
@@ -723,7 +774,6 @@ export default new Vuex.Store({
     getProviderBalance: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         providerAddr: string;
       }
@@ -741,7 +791,6 @@ export default new Vuex.Store({
     getProviderWithdrawTime: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         providerAddr: string;
       }
@@ -761,7 +810,6 @@ export default new Vuex.Store({
     canWithdrawCheck: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         providerAddr: string;
       }
@@ -786,7 +834,6 @@ export default new Vuex.Store({
     getPrice: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         coverage: string;
         duration: string;
@@ -802,10 +849,36 @@ export default new Vuex.Store({
         return "0";
       }
     },
+    getPoolInfo: async ({ commit, dispatch }, metaPoolAddr: string): Promise<any> => {
+      try {
+        const metapoolContract = await dispatch("getMetaPool", { address: metaPoolAddr });
+        const res = await Promise.all([
+          metapoolContract.methods.reserves().call(),
+          metapoolContract.methods.utilized().call(),
+          metapoolContract.methods.minPay().call(),
+          metapoolContract.methods.description().call(),
+          metapoolContract.methods.getConcepts().call(),
+          metapoolContract.methods.LOCKUP_PERIOD().call(),
+          metapoolContract.methods.MAX_RESERVES().call(),
+          metapoolContract.methods.WITHDRAW_GRACE_PERIOD().call(),
+        ]);
+        return {
+          reserves: new BigNumber(res[0]),
+          utilized: new BigNumber(res[1]),
+          minPay: new BigNumber(res[2]),
+          description: res[3],
+          getConcepts: res[4],
+          LOCKUP_PERIOD: new BigNumber(res[5]),
+          MAX_RESERVES: new BigNumber(res[6]),
+          WITHDRAW_GRACE_PERIOD: new BigNumber(res[7]),
+        };
+      } catch (e) {
+        console.error("Couldn't get pool info,", e);
+      }
+    },
     getPayoutToken: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
       }
     ): Promise<string> => {
@@ -822,7 +895,6 @@ export default new Vuex.Store({
     getClaimablePremiums: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         providerAddr: string;
       }
@@ -840,7 +912,6 @@ export default new Vuex.Store({
     getReserves: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
       }
     ): Promise<string> => {
@@ -857,7 +928,6 @@ export default new Vuex.Store({
     getUtilized: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
       }
     ): Promise<string> => {
@@ -875,7 +945,6 @@ export default new Vuex.Store({
     getDescription: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
       }
     ): Promise<string> => {
@@ -895,7 +964,6 @@ export default new Vuex.Store({
     enterCooldown: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         index: string;
@@ -908,7 +976,7 @@ export default new Vuex.Store({
         const web3Provider = Vue.prototype.$provider;
         return metapoolContract.methods
           .enterCooldown(payload.index)
-          .send({ from: payload.userAddress, gas: 380000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: 380000 }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not enter cooldown", error);
               payload.onTxHash && payload.onTxHash("");
@@ -932,7 +1000,6 @@ export default new Vuex.Store({
     reactivateConcept: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         index: string;
@@ -945,7 +1012,7 @@ export default new Vuex.Store({
         const web3Provider = Vue.prototype.$provider;
         return metapoolContract.methods
           .reactivateConcept(payload.index)
-          .send({ from: payload.userAddress, gas: 380000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: 380000 }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not reactivateConcept", error);
               payload.onTxHash && payload.onTxHash("");
@@ -969,7 +1036,6 @@ export default new Vuex.Store({
     setSettling: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         index: string;
@@ -982,7 +1048,7 @@ export default new Vuex.Store({
         const web3Provider = Vue.prototype.$provider;
         return metapoolContract.methods
           ._setSettling(payload.index)
-          .send({ from: payload.userAddress, gas: 580000 }, async (error: any, txHash: string) => {
+          .send({ from: store.state.account, gas: 580000 }, async (error: any, txHash: string) => {
             if (error) {
               console.error("MetaPool could not _setSettling", error);
               payload.onTxHash && payload.onTxHash("");
@@ -1006,7 +1072,6 @@ export default new Vuex.Store({
     claimArbiterFees: async (
       { commit, dispatch },
       payload: {
-        provider: provider;
         metaPoolAddr: string;
         userAddress: string;
         onTxHash?: (txHash: string) => void;
@@ -1016,7 +1081,7 @@ export default new Vuex.Store({
         // const metaContract = getMetaPool(provider, metaPoolAddr);
         const metapoolContract = await dispatch("getMetaPool", { address: payload.metaPoolAddr });
         const web3Provider = Vue.prototype.$provider;
-        return metapoolContract.methods._getArbiterFees().send({ from: payload.userAddress, gas: 580000 }, async (error: any, txHash: string) => {
+        return metapoolContract.methods._getArbiterFees().send({ from: store.state.account, gas: 580000 }, async (error: any, txHash: string) => {
           if (error) {
             console.error("MetaPool could not _getArbiterFees", error);
             payload.onTxHash && payload.onTxHash("");

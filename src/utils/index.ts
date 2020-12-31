@@ -41,6 +41,16 @@ export const getBalance = async (provider: provider, tokenAddress: string, userA
   }
 };
 
+export const getAllowance = async (userAddress: string, spenderAddress: string, tokenAddress: string, provider: provider): Promise<string> => {
+  try {
+    const tokenContract = getERC20Contract(provider, tokenAddress);
+    const allowance: string = await tokenContract.methods.allowance(userAddress, spenderAddress).call();
+    return allowance;
+  } catch (e) {
+    return "0";
+  }
+};
+
 export const sleep = (ms: number) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
