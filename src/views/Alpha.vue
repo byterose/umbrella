@@ -503,9 +503,9 @@ export default {
             this.buyProtection({
               metaPoolAddr: this.metaAddr(),
               conceptIndex: this.conceptIndex(),
-              coverageAmount: new BigNumber(this.coverAmt).times(ethDecs),
+              coverageAmount: new BigNumber(this.coverAmt).times(ethDecs).toString(),
               duration: this.duration * 86400,
-              maxPay: new BigNumber(this.price).times(ethDecs) + ethDecs,
+              maxPay: (new BigNumber(this.price).times(ethDecs) + ethDecs).toString(),
               deadline: Math.round(Date.now() / 1000 + 60 * 15),
             })
               .then(async e => {
