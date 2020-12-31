@@ -297,7 +297,11 @@ export default {
     },
     async checkPrice() {
       this.price = new BigNumber(
-        await this.getPrice({ metaPoolAddr: this.metaAddr(), coverage: new BigNumber(this.coverAmt).times(ethDecs), duration: this.duration * 86400 })
+        await this.getPrice({
+          metaPoolAddr: this.metaAddr(),
+          coverage: new BigNumber(this.coverAmt).times(ethDecs).toString(),
+          duration: this.duration * 86400,
+        })
       )
         .div(ethDecs)
         .toFixed(4)
@@ -636,7 +640,7 @@ export default {
     },
     async posUpdateHandler() {
       // this.runChecks();
-      this.checkPrice();
+      await this.checkPrice();
     },
     async getApproval(identifier, spenderAddress, tokenAddress) {
       if (spenderAddress) {
