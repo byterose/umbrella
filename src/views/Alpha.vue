@@ -157,8 +157,8 @@
                           ? approvals[approvalIdentifier()] === true || navAct == "claim" || navAct == "withdraw"
                             ? actName
                             : "Approve"
-                          : "Select Token"
-                        : "Select Token"
+                          : "Select Protocol"
+                        : "Select Protocol"
                       : ""
                   }}
                   <beat-loader v-if="isPending" color="#FF4A4A"></beat-loader>
