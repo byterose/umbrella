@@ -845,7 +845,7 @@ export default new Vuex.Store({
         const price: string = await metapoolContract.methods.currentPrice(payload.coverage, payload.duration).call();
         return price;
       } catch (e) {
-        console.error("Couldn't get price");
+        console.error("Couldn't get price", e);
         return "0";
       }
     },
