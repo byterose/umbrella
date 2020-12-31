@@ -145,7 +145,7 @@
                     placement: 'left-center',
                   }"
                 />
-                <div class="price" v-if="price && navAct == 'cover'">Price: {{ price }} DAI</div>
+                <div class="price" v-if="price && navAct == 'cover'">Cost: {{ price }} DAI</div>
                 <div class="error" v-if="hasError && navAct !== 'lptrade'">
                   {{ currentError }}
                 </div>
