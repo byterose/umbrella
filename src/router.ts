@@ -7,6 +7,8 @@ import Account from "@/views/Account.vue";
 import About from "@/views/About.vue";
 import Alpha from "@/views/Alpha.vue";
 import NotFound from "@/views/NotFound.vue";
+import { languages } from "@/plugins/i18n";
+import store from "@/store";
 
 Vue.use(VueRouter);
 
@@ -15,7 +17,24 @@ const routes: Array<RouteConfig> = [
     path: "/",
     name: "Alpha",
     component: Alpha,
+    // beforeEnter(to, from, next) {
+    //   next(store.state.lang);
+    // },
   },
+  // {
+  //   path: "/:lang",
+  //   component: Alpha,
+  //   beforeEnter(to, from, next) {
+  //     const lang = to.params.lang;
+  //     if (languages.includes(lang)) {
+  //       if (store.state.lang != "en") {
+  //         store.dispatch("updateLang", { lang: lang });
+  //       }
+  //       return next();
+  //     }
+  //     return next({ path: store.state.lang });
+  //   },
+  // },
   // {
   //   path: "/coverage",
   //   name: "Coverage",

@@ -13,6 +13,8 @@
 </style>
 
 <script>
+import { mapState } from "vuex";
+
 export default {
   name: "App",
   head: {
@@ -21,5 +23,12 @@ export default {
   },
   methods: {},
   // mounted() {},
+  computed: mapState(["lang"]),
+  watch: {
+    lang() {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      this.$router.replace({ params: { lang: this.lang } }).catch(() => {});
+    },
+  },
 };
 </script>

@@ -14,6 +14,7 @@ import store from "@/store";
 import YAMContract from "@/utils/abi/yam.json";
 import MetaPool from "@/utils/abi/UmbrellaMetaPool.json";
 import BigNumber from "bignumber.js";
+import i18n, { selectedLocale } from "../plugins/i18n";
 
 Vue.use(Vuex);
 
@@ -23,6 +24,7 @@ const defaultState = () => {
   return {
     version: "A-0.1", // make dynamic
     theme: stateLoad("theme") || "light",
+    lang: stateLoad("lang") || selectedLocale,
     account: stateLoad("account") || "0x0",
     userType: "default", // seeker, provider, arbitrer
     currentMetapool: [],
@@ -63,6 +65,10 @@ export default new Vuex.Store({
     THEME(state, data) {
       state.theme = data.theme;
       console.debug("THEME", data.theme);
+    },
+    LANG(state, data) {
+      state.lang = data.lang;
+      console.debug("LANG", data.lang);
     },
     CONNECT() {
       console.debug("CONNECT");
@@ -138,6 +144,14 @@ export default new Vuex.Store({
           }
         }, 500);
       }
+      if (store.state.lang) {
+        document.documentElement.setAttribute("data-lang", store.state.lang);
+        setTimeout(() => {
+          if (store.state.lang != "en") {
+            i18n.locale = store.state.lang;
+          }
+        }, 500);
+      }
       // setTimeout(async () => {
       //   const connector = await Vue.prototype.$auth.getConnector();
       //   if (connector) {
@@ -156,6 +170,13 @@ export default new Vuex.Store({
       document.documentElement.setAttribute("data-theme", value);
       stateSave("theme", value);
       commit("THEME", { theme: value });
+    },
+    updateLang({ commit, dispatch }, payload) {
+      const value = payload.lang;
+      document.documentElement.setAttribute("data-lang", value);
+      stateSave("lang", value);
+      i18n.locale = value;
+      commit("LANG", { lang: value });
     },
 
     // wallet
@@ -1117,6 +1138,9 @@ export default new Vuex.Store({
   getters: {
     theme(state) {
       return state.theme;
+    },
+    lang(state) {
+      return state.lang;
     },
     account(state) {
       return state.account;

@@ -17,7 +17,9 @@
           <!-- <router-link to="/about">About</router-link> -->
           <!-- <router-link to="/docs">Docs</router-link> -->
           <a href="https://yam.finance/" target="_blank">Yam.finance</a>
+          <a>{{ $t("message") }}</a>
         </div>
+        <LanguageSwitch />
         <div class="flex vert">
           <Swipe></Swipe>
           <Space />

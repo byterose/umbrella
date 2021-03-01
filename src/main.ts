@@ -13,6 +13,7 @@ import "@/filters";
 import "@/styles.scss";
 import "animate.css";
 import "@invisiburu/vue-picker/dist/vue-picker.min.css";
+import i18n from "./plugins/i18n";
 
 Vue.config.productionTip = false;
 Vue.mixin(mixins);
@@ -22,6 +23,7 @@ Vue.use(VTooltip);
 Vue.component("Header", () => import("@/components/Header.vue"));
 Vue.component("Card", () => import("@/components/Card.vue"));
 Vue.component("Button", () => import("@/components/Button.vue"));
+Vue.component("LanguageSwitch", () => import("@/components/LanguageSwitch.vue"));
 
 // palette repo
 Vue.component("Container", () => import("@/repo_palette/Container.vue"));
@@ -35,5 +37,6 @@ Vue.component("beat-loader", BeatLoader);
 new Vue({
   router,
   store,
+  i18n,
   render: h => h(App),
 }).$mount("#app");
