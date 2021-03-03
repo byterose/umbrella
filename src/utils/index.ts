@@ -14,10 +14,14 @@ export function stateSave(key, state) {
 }
 
 export function stateLoad(key) {
-  if (window.localStorage.getItem(key)) {
-    return JSON.parse(window.localStorage.getItem(key) || "");
-  } else {
-    return null;
+  try {
+    if (window.localStorage.getItem(key) && navigator.cookieEnabled) {
+      return JSON.parse(window.localStorage.getItem(key) || "");
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error(error);
   }
 }
 

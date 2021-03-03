@@ -20,6 +20,10 @@ export default {
     titleTemplate: "%s - Umbrella",
   },
   methods: {},
-  // mounted() {},
+  mounted() {
+    if (!navigator.cookieEnabled) {
+      alert("Please enable cookies to fully enjoy this site!");
+    }
+  },
 };
 </script>
