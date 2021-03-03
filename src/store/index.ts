@@ -159,11 +159,11 @@ export default new Vuex.Store({
     },
 
     // wallet
-    connect: async ({ commit, dispatch }, connector = "injected") => {
+    connect: async ({ commit, dispatch }, payload: { connector: string }) => {
       auth = getInstance();
-      await auth.login(connector);
+      await auth.login(payload.connector);
       if (auth.provider) {
-        stateSave("provider", connector);
+        stateSave("provider", payload.connector);
         auth.web3 = new Web3Provider(auth.provider);
         Vue.prototype.$web3 = auth.web3;
         Vue.prototype.$provider = auth.web3.provider;
