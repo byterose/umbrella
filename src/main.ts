@@ -22,6 +22,7 @@ Vue.use(VTooltip);
 Vue.component("Header", () => import("@/components/Header.vue"));
 Vue.component("Card", () => import("@/components/Card.vue"));
 Vue.component("Button", () => import("@/components/Button.vue"));
+Vue.component("Modal", () => import("@/components/Modal.vue"));
 
 // palette repo
 Vue.component("Container", () => import("@/repo_palette/Container.vue"));
