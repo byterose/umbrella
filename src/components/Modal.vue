@@ -1,7 +1,7 @@
 <template>
   <div class="modal-container">
     <div class="modal">
-      <div class="overlay-container" :class="true ? 'ease-in' : 'ease-out'" aria-hidden="true">
+      <div class="overlay-container" :class="showModal ? 'ease-in' : 'ease-out'" aria-hidden="true">
         <div class="overlay"></div>
       </div>
 
@@ -10,7 +10,7 @@
 
       <div
         class="modal-panel"
-        :class="true ? 'translate-y-4 ease-in' : 'translate-y-0 ease-out'"
+        :class="showModal ? 'translate-y-4 ease-in' : 'translate-y-0 ease-out'"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-headline"
@@ -36,7 +36,7 @@
           </ul>
         </div>
         <div class="button-container">
-          <button type="button" class="modal-button">Go back to dashboard</button>
+          <button type="button" @click="$emit('update:showModal', !showModal)" class="modal-button">Go back to dashboard</button>
         </div>
       </div>
     </div>
@@ -251,7 +251,7 @@ import { mapActions } from "vuex";
 export default {
   name: "Modal",
   props: {
-    size: Number,
+    showModal: Boolean,
   },
   computed: {
     style() {
@@ -271,7 +271,7 @@ export default {
       if (connected) {
         console.log("open user mini popup");
       } else {
-        await this.connect({ connectorString: connectorString });
+        await this.connect({ connector: connectorString });
       }
     },
     async logout() {

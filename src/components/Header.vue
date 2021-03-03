@@ -21,13 +21,16 @@
         <div class="flex vert">
           <Swipe></Swipe>
           <Space />
-          <button id="wallet" @click="auth" :class="{ connected: $auth.isAuthenticated }">
+          <!-- Open the Modal -->
+          <button id="wallet" @click="showModal = !showModal" :class="{ connected: $auth.isAuthenticated }">
             <span v-if="!$auth.isAuthenticated">Connect Wallet</span>
             <span v-if="$auth.isAuthenticated">Connected</span>
           </button>
-          <!-- <button id="wallet" @click="logout">Reset Instance</button> -->
+          <Space />
+          <button v-if="$auth.isAuthenticated" id="wallet" @click="logout">Logout</button>
         </div>
       </div>
+      <Modal v-if="showModal" :showModal.sync="showModal" />
     </Container>
   </header>
 </template>
@@ -121,6 +124,7 @@ export default {
   data() {
     return {
       account: store.state.account,
+      showModal: false,
     };
   },
   components: {},
