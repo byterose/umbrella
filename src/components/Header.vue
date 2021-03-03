@@ -19,9 +19,10 @@
           <a href="https://yam.finance/" target="_blank">Yam.finance</a>
           <a>{{ $t("message") }}</a>
         </div>
-        <LanguageSwitch />
         <div class="flex vert">
           <Swipe></Swipe>
+          <Space />
+          <LanguageSwitch />
           <Space />
           <button id="wallet" @click="auth" :class="{ connected: $auth.isAuthenticated }">
             <span v-if="!$auth.isAuthenticated">Connect Wallet</span>
