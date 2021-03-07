@@ -56,7 +56,7 @@
 
 .modal {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   min-height: 100vh;
   padding-left: 1rem;
@@ -67,7 +67,8 @@
 
   @media (max-width: 800px) {
     display: block;
-    padding: 0px;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 
@@ -101,7 +102,7 @@
 
 .modal-panel {
   background-color: var(--back);
-  border-radius: 0.5rem;
+  border-radius: 10px;
   display: inline-block;
   overflow: hidden;
   padding-left: 1rem;
@@ -267,6 +268,7 @@ export default {
   methods: {
     ...mapActions(["connect", "disconnect", "reset"]),
     async auth(connectorString) {
+      this.$emit("update:showModal", !this.showModal);
       const connected = await store.getters.connected;
       if (connected) {
         console.log("open user mini popup");
