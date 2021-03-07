@@ -27,7 +27,7 @@ export default {
   watch: {
     lang() {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      this.$router.replace({ params: { lang: this.lang } }).catch(() => {});
+      // this.$router.replace({ params: { lang: this.lang } }).catch(() => {});
     },
   },
 };
